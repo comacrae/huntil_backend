@@ -4,6 +4,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 class Base(DeclarativeBase):
   pass
+
 class Site(Base):
   __tablename__="site"
   site_id : Mapped[str] = mapped_column(String(63),primary_key=True)
