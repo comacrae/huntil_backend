@@ -1,6 +1,7 @@
 from typing import Annotated
 from database import DbSessionHandler
 from models import Site, Harvest, HuntableSpecies, Geography, Document
+import response_models
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 from fastapi import FastAPI, Depends, Query, HTTPException
@@ -12,24 +13,24 @@ app = FastAPI()
 @app.get('/')
 def root() -> str:
   """Root endpoint for testing"""
-  return {'message':'Hello world'}
+  return "{'message':'Hello world'}"
 
-@app.get('/sites/')
+@app.get('/sites/', response_model=list[response_models.Site])
 def read_sites(
   session: SessionDependency,
   offset: int = 0,
   limit: Annotated[int, Query(le=100)] = 100
-) -> list[Site]:
+) -> list[response_models.Site]:
   """Get all sites"""
   stmt = select(Site).offset(offset).limit(limit)
-  sites = session.execute(stmt).all()
-  return sites
+  sites = session.execute(stmt).scalars().all()
+  return [response_models.Site.model_validate(site) for site in sites]
 
 @app.get('/sites/{site_id}/names')
 def read_site(
   session:SessionDependency,
   site_id:str
-) -> Site:
+) -> response_models.Site:
   """Get Site Naming info for a specific site"""
   try:
     return session.execute(select(Site).where(Site.site_id==site_id))
@@ -42,7 +43,7 @@ def read_huntable_species(
   session: SessionDependency,
   offset: int = 0,
   limit: Annotated[int, Query(le=100)] = 100
-) -> list[HuntableSpecies]:
+) -> list[response_models.HuntableSpecies]:
   """Get All Huntable Species available for all sites"""
   stmt = select(HuntableSpecies).offset(offset).limit(limit)
   return session.execute(stmt).all()
@@ -51,7 +52,7 @@ def read_huntable_species(
 def read_huntable_species_by_site(
   session: SessionDependency,
   site_id:str
-) -> list[HuntableSpecies]:
+) -> list[response_models.HuntableSpecies]:
   """Get huntable specices for a specific site"""
   stmt = select(HuntableSpecies).where(HuntableSpecies.site_id == site_id)
   return session.execute(stmt).all()
@@ -60,7 +61,7 @@ def read_huntable_species_by_site(
 def read_huntable_species_by_site(
   session: SessionDependency,
   species:str
-) -> list[HuntableSpecies]:
+) -> list[response_models.HuntableSpecies]:
   """Gets all sites where a specific species is available"""
   stmt = select(HuntableSpecies).where(HuntableSpecies.species == species)
   return session.execute(stmt).all()
@@ -69,7 +70,7 @@ def read_huntable_species_by_site(
 def read_geography(
   session:SessionDependency,
   site_id:str
-) -> Geography:
+) -> response_models.Geography:
   """Get Site geography info (address, huntable acres, coords, etc) for a specific site"""
   try:
     return session.execute(select(Geography).where(Geography.site_id==site_id))
@@ -80,7 +81,7 @@ def read_geography(
 def read_geography(
   session:SessionDependency,
   site_id:str
-) -> Document:
+) -> response_models.Document:
   """Get Site document info (markdown conversion & url) for a specific site"""
   try:
     return session.execute(select(Document).where(Document.site_id==site_id))
@@ -92,7 +93,7 @@ def read_harvests(
   session: SessionDependency,
   offset: int = 0,
   limit: Annotated[int, Query(le=100)] = 100
-) -> list[Harvest]:
+) -> list[response_models.Harvest]:
   """Get all harvest data"""
   stmt = select(Harvest).offset(offset).limit(limit)
   harvest_records = session.execute(stmt).all()
@@ -101,7 +102,7 @@ def read_harvests(
 @app.get('/harvest/counties')
 def read_counties_harvests(
   session: SessionDependency
-) -> list[Harvest]:
+) -> list[response_models.Harvest]:
   """Get all county-wise harvest data"""
   stmt = select(Harvest).where(Harvest.is_county == 1)
   harvest_records = session.execute(stmt).all()
@@ -110,7 +111,7 @@ def read_counties_harvests(
 @app.get('/harvest/sites')
 def read_counties_harvests(
   session: SessionDependency
-) -> list[Harvest]:
+) -> list[response_models.Harvest]:
   """Get all county-wise harvest data"""
   stmt = select(Harvest).where(Harvest.is_county == 0)
   harvest_records = session.execute(stmt).all()
