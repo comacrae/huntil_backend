@@ -15,7 +15,7 @@ class Site(Base):
   huntable: Mapped[List["HuntableSpecies"]] = relationship("HuntableSpecies",back_populates="site")
   document: Mapped["Document"] = relationship("Document",back_populates="site")
   geography: Mapped["Geography"] = relationship("Geography",back_populates="site")
-  harvest: Mapped[List["Harvest"]] = relationship("Harvest",back_populates="site")
+  harvest: Mapped[List["Harvest"]] = relationship("Harvest",back_populates="site_relationship")
 
   def __repr__(self) -> str:
     return f"site_id={self.site_id!r} full_name={self.full_name!r} abbreviated_name={self.abbreviated_name!r} site_type={self.site_type!r}"
@@ -66,7 +66,7 @@ class Harvest(Base):
   season: Mapped[str] = mapped_column(String(127))
   subcategory: Mapped[str] = mapped_column(Text)
   harvest_count: Mapped[int] = mapped_column(Integer)
-  site: Mapped["Site"] = relationship("Site",back_populates="harvest")
+  site_relationship: Mapped["Site"] = relationship("Site",back_populates="harvest")
 
   def __repr__(self) -> str:
     return f"record_id={self.record_id!r} site={self.site!r} is_county={self.is_county!r} year={self.year!r} species={self.species!r} season={self.season!r} subcategory={self.subcategory!r} harvest={self.harvest!r}"

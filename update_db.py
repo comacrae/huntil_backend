@@ -11,16 +11,19 @@ def migrate_harvest(db_path: str):
             CREATE TABLE harvest_new (
                 record_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 site_id TEXT NOT NULL,
+                site TEXT NOT NULL,
+                year INT NOT NULL,
                 species TEXT NOT NULL,
                 season TEXT NOT NULL,
+                subcategory TEXT NOT NULL,
                 harvest_count INTEGER
             )
         """)
         
         # 2. Copy existing data into the new table
         cursor.execute("""
-            INSERT INTO harvest_new (site_id, species, season, harvest_count)
-            SELECT site_id, species, season, harvest_count FROM harvest;
+            INSERT INTO harvest_new (site_id, site, year, species, season, subcategory, harvest_count)
+            SELECT site_id, site, year, species, season, subcategory, harvest_count FROM harvest;
         """)
         
         # 3. Drop the old table

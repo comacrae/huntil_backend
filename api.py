@@ -24,16 +24,20 @@ def read_sites(
   """Get all sites"""
   stmt = select(Site).offset(offset).limit(limit)
   sites = session.execute(stmt).scalars().all()
+  print(sites[0].__dict__)
   return [response_models.Site.model_validate(site) for site in sites]
 
-@app.get('/sites/{site_id}/names')
+@app.get('/sites/{site_id}/names', response_model=response_models.Site)
 def read_site(
   session:SessionDependency,
   site_id:str
 ) -> response_models.Site:
   """Get Site Naming info for a specific site"""
   try:
-    return session.execute(select(Site).where(Site.site_id==site_id))
+    stmt = select(Site).where(Site.site_id==site_id)
+    site = session.execute(stmt).scalar()
+    print(site.__dict__)
+    return site
   except:
     return HTTPException(status_code=404, detail=f"Site with site_id={site_id} not found")
 

@@ -22,7 +22,7 @@ class Geography(BaseModel):
   class Config:
     from_attributes = True
   site_id:str
-  region:str
+  region:int
   county:str
   huntable_acres:int
   address:str
