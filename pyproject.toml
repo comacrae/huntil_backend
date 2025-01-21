@@ -1,19 +1,17 @@
-[project]
+[tool.poetry]
 name = "huntil-backend"
 version = "0.1.0"
 description = ""
-authors = [
-    {name = "Colin MacRae ",email = "76566137+comacrae@users.noreply.github.com"}
-]
+authors = ["Colin MacRae <76566137+comacrae@users.noreply.github.com>"]
 readme = "README.md"
-requires-python = ">=3.13"
-dependencies = [
-    "uvicorn (>=0.34.0,<0.35.0)",
-    "fastapi (>=0.115.6,<0.116.0)",
-    "sqlalchemy (>=2.0.37,<3.0.0)",
-    "pydantic (>=2.10.5,<3.0.0)"
-]
+packages = [{ include = "huntil_backend" }]
 
+[tool.poetry.dependencies]
+python = "^3.10"
+uvicorn = ">=0.34.0,<0.35.0"
+fastapi = {extras = ["standard"], version = "^0.115.6"}
+sqlalchemy = ">=2.0.37,<3.0.0"
+pydantic = ">=2.10.5,<3.0.0"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
