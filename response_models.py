@@ -4,7 +4,6 @@ from typing import List
 class HuntableSpecies(BaseModel):
   class Config:
     from_attributes = True
-  record_id: int
   site_id: str
   species: str
   season: str

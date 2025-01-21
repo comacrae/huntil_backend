@@ -47,7 +47,14 @@ def read_huntable_species(
 ) -> list[response_models.HuntableSpecies]:
   """Get All Huntable Species available for all sites"""
   stmt = select(HuntableSpecies).offset(offset).limit(limit)
-  return session.execute(stmt).all()
+  huntables = session.execute(stmt).scalars().all()
+  return [
+    response_models.HuntableSpecies(
+      site_id=huntable.site.site_id, 
+      species=huntable.species,
+      season=huntable.season,
+      stipulation=huntable.stipulation
+      ) for huntable in huntables]
 
 @app.get('/huntable-species/site/{site_id}}')
 def read_huntable_species_by_site(
@@ -56,7 +63,18 @@ def read_huntable_species_by_site(
 ) -> list[response_models.HuntableSpecies]:
   """Get huntable specices for a specific site"""
   stmt = select(HuntableSpecies).where(HuntableSpecies.site_id == site_id)
-  return session.execute(stmt).all()
+  huntables = session.execute(stmt).scalars.all()
+  if len(huntables) == 0:
+    raise HTTPException(status_code=404, detail=f"No huntable species for site with site_id={site_id}")
+  return [
+    response_models.HuntableSpecies(
+      site_id=huntable.site.site_id, 
+      species=huntable.species,
+      season=huntable.season,
+      stipulation=huntable.stipulation
+      ) for huntable in huntables]
+
+
 
 @app.get('/huntable-species/species/{species}')
 def read_huntable_species_by_site(
