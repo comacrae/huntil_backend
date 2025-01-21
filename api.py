@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Union, Optional
 from database import DbSessionHandler
 from models import Site, Harvest, HuntableSpecies, Geography, Document
 import response_models
@@ -15,31 +15,28 @@ def root() -> str:
   """Root endpoint for testing"""
   return "{'message':'Hello world'}"
 
-@app.get('/sites/', response_model=list[response_models.Site])
+@app.get('/sites/names', response_model=list[response_models.SiteName])
 def read_sites(
   session: SessionDependency,
   offset: int = 0,
   limit: Annotated[int, Query(le=100)] = 100
-) -> list[response_models.Site]:
+) -> list[response_models.SiteName]:
   """Get all sites"""
-  stmt = select(Site).offset(offset).limit(limit)
-  sites = session.execute(stmt).scalars().all()
-  print(sites[0].__dict__)
-  return [response_models.Site.model_validate(site) for site in sites]
+  stmt = select(Site.site_id, Site.abbreviated_name, Site.full_name, Site.site_type).offset(offset).limit(limit)
+  sites = session.execute(stmt).all()
+  return [response_models.SiteName.model_validate(response_models.SiteName(site_id=site.site_id, full_name = site.full_name, abbreviated_name=site.abbreviated_name, site_type=site.site_type)) for site in sites]
 
-@app.get('/sites/{site_id}/names', response_model=response_models.Site)
+@app.get('/sites/{site_id}/names', response_model = Optional[response_models.SiteName])
 def read_site(
   session:SessionDependency,
   site_id:str
-) -> response_models.Site:
+) -> Optional[response_models.SiteName]:
   """Get Site Naming info for a specific site"""
-  try:
-    stmt = select(Site).where(Site.site_id==site_id)
-    site = session.execute(stmt).scalar()
-    print(site.__dict__)
-    return site
-  except:
-    return HTTPException(status_code=404, detail=f"Site with site_id={site_id} not found")
+  stmt = select(Site).where(Site.site_id==site_id)
+  site = session.execute(stmt).scalar_one_or_none()
+  if site is None:
+    raise HTTPException(status_code=404, detail=f"Site with site_id={site_id} not found")
+  return response_models.SiteName(site_id=site.site_id, full_name = site.full_name, abbreviated_name=site.abbreviated_name,site_type = site.site_type)
 
 
 @app.get('/huntable-species/}')

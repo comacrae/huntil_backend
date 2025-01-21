@@ -52,3 +52,11 @@ class Site(BaseModel):
   document: Document
   geography: Geography
   harvest: List[Harvest] = []
+
+class SiteName(BaseModel):
+  class Config:
+    from_attributes = True
+  site_id: str
+  full_name:str
+  abbreviated_name:str
+  site_type:str

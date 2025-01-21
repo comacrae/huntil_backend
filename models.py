@@ -20,6 +20,7 @@ class Site(Base):
   def __repr__(self) -> str:
     return f"site_id={self.site_id!r} full_name={self.full_name!r} abbreviated_name={self.abbreviated_name!r} site_type={self.site_type!r}"
 
+
 class HuntableSpecies(Base):
   __tablename__="huntable_species"
   record_id: Mapped[int] = mapped_column(Integer, primary_key=True,autoincrement=True, index=True)
