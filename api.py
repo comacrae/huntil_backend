@@ -155,24 +155,34 @@ def read_harvests(
 ) -> list[response_models.Harvest]:
   """Get all harvest data"""
   stmt = select(Harvest).offset(offset).limit(limit)
-  harvest_records = session.execute(stmt).all()
-  return harvest_records
+  harvest_records = session.execute(stmt).scalars().all()
+  return [response_models.Harvest(record_id = harvest_record.record_id,
+                                  site_id=harvest_record.site_id, 
+                                  site=harvest_record.site,
+                                  year=harvest_record.year,
+                                  species=harvest_record.species,
+                                  season=harvest_record.season,
+                                  subcategory=harvest_record.subcategory,
+                                  harvest_count=harvest_record.harvest_count
+                                  ) for harvest_record in harvest_records]
 
-@app.get('/harvest/counties')
-def read_counties_harvests(
-  session: SessionDependency
+#There's not much harvest data so I'll just load it in as a dataframe, cache, and do filtering on the client
+"""
+@app.get('/harvest/species/{species}')
+def read_harvests_by_specices(
+  session: SessionDependency,
+  offset: int = 0,
+  limit: Annotated[int, Query(le=100)] = 100
 ) -> list[response_models.Harvest]:
-  """Get all county-wise harvest data"""
-  stmt = select(Harvest).where(Harvest.is_county == 1)
+  stmt = select(Harvest).offset(offset).limit(limit)
   harvest_records = session.execute(stmt).all()
-  return harvest_records
-
-@app.get('/harvest/sites')
-def read_counties_harvests(
-  session: SessionDependency
-) -> list[response_models.Harvest]:
-  """Get all county-wise harvest data"""
-  stmt = select(Harvest).where(Harvest.is_county == 0)
-  harvest_records = session.execute(stmt).all()
-  return harvest_records
+  return [response_models.Harvest(record_id = harvest_records.record_id,
+                                  site_id=harvest_records.site_id, 
+                                  year=harvest_records.year,
+                                  species=harvest_records.species,
+                                  season=harvest_records.season,
+                                  subcategory=harvest_records.subcategory,
+                                  harvest_count=harvest_records.harvest_count
+                                  )]
+                                  """
 
