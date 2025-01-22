@@ -39,7 +39,7 @@ def read_site(
   return response_models.SiteName(site_id=site.site_id, full_name = site.full_name, abbreviated_name=site.abbreviated_name,site_type = site.site_type)
 
 
-@app.get('/huntable-species/}')
+@app.get('/huntable-species/')
 def read_huntable_species(
   session: SessionDependency,
   offset: int = 0,
@@ -56,14 +56,14 @@ def read_huntable_species(
       stipulation=huntable.stipulation
       ) for huntable in huntables]
 
-@app.get('/huntable-species/site/{site_id}}')
+@app.get('/huntable-species/site/{site_id}')
 def read_huntable_species_by_site(
   session: SessionDependency,
   site_id:str
 ) -> list[response_models.HuntableSpecies]:
   """Get huntable specices for a specific site"""
   stmt = select(HuntableSpecies).where(HuntableSpecies.site_id == site_id)
-  huntables = session.execute(stmt).scalars.all()
+  huntables = session.execute(stmt).scalars().all()
   if len(huntables) == 0:
     raise HTTPException(status_code=404, detail=f"No huntable species for site with site_id={site_id}")
   return [
@@ -81,9 +81,33 @@ def read_huntable_species_by_site(
   session: SessionDependency,
   species:str
 ) -> list[response_models.HuntableSpecies]:
-  """Gets all sites where a specific species is available"""
+  """Get huntable specices for a specific site"""
   stmt = select(HuntableSpecies).where(HuntableSpecies.species == species)
-  return session.execute(stmt).all()
+  huntables = session.execute(stmt).scalars().all()
+  if len(huntables) == 0:
+    raise HTTPException(status_code=404, detail=f"No sites for site with huntable_species={species}")
+  return [
+    response_models.HuntableSpecies(
+      site_id=huntable.site.site_id, 
+      species=huntable.species,
+      season=huntable.season,
+      stipulation=huntable.stipulation
+      ) for huntable in huntables]
+
+@app.get('/geography/')
+def get_all_geography(
+  session:SessionDependency
+) -> list[response_models.Geography]:
+  stmt = select(Geography)
+  results = session.execute(stmt).scalars().all()
+  return [response_models.Geography(site_id=result.site_id,
+                                    region=result.region, 
+                                    county=result.county, 
+                                    huntable_acres=result.huntable_acres,
+                                    address=result.address,
+                                    latitude=result.latitude, 
+                                    longitude=result.longitude)
+          for result in results]
 
 @app.get('/geography/{site_id}')
 def read_geography(
@@ -91,21 +115,37 @@ def read_geography(
   site_id:str
 ) -> response_models.Geography:
   """Get Site geography info (address, huntable acres, coords, etc) for a specific site"""
-  try:
-    return session.execute(select(Geography).where(Geography.site_id==site_id))
-  except:
-    return HTTPException(status_code=404, detail=f"Site with site_id={site_id} not found")
+  stmt = select(Geography).where(Geography.site_id==site_id)
+  result = session.execute(stmt).scalar_one_or_none()
+  if result is None:
+    raise HTTPException(status_code=404, detail=f"Geography with site_id={site_id} not found")
+  return response_models.Geography(site_id=result.site_id,
+                                    region=result.region, 
+                                    county=result.county, 
+                                    huntable_acres=result.huntable_acres,
+                                    address=result.address,
+                                    latitude=result.latitude, 
+                                    longitude=result.longitude)
+@app.get('/documents/')
+def read_all_documents(
+  session:SessionDependency,
+) -> list[response_models.Document]:
+  """Get Site document info (markdown conversion & url) for a specific site"""
+  stmt = select(Document)
+  results = session.execute(stmt).scalars().all()
+  return [response_models.Document(site_id=result.site_id, site_markdown=result.site_markdown, url=result.url) for result in results]
 
 @app.get('/documents/{site_id}')
-def read_geography(
+def read_document(
   session:SessionDependency,
   site_id:str
 ) -> response_models.Document:
   """Get Site document info (markdown conversion & url) for a specific site"""
-  try:
-    return session.execute(select(Document).where(Document.site_id==site_id))
-  except:
-    return HTTPException(status_code=404, detail=f"Site with site_id={site_id} not found")
+  stmt = select(Document).where(Document.site_id==site_id)
+  result = session.execute(stmt).scalar_one_or_none()
+  if result is None:
+    raise HTTPException(status_code=404, detail=f"Document with site_id={site_id} not found")
+  return response_models.Document(site_id=result.site_id, site_markdown=result.site_markdown, url=result.url)
 
 @app.get('/harvest/')
 def read_harvests(
