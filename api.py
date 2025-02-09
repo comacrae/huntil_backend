@@ -4,18 +4,32 @@ from models import Site, Harvest, HuntableSpecies, Geography, Document
 import response_models
 from sqlalchemy.orm import Session
 from sqlalchemy import select
-from fastapi import FastAPI, Depends, Query, HTTPException
+from fastapi import FastAPI, Depends, Query, HTTPException, APIRouter
+from fastapi.middleware.cors import CORSMiddleware
 
 db_session_handler = DbSessionHandler()
 SessionDependency = Annotated[Session, Depends(db_session_handler.get_db)]
 app = FastAPI()
+api_router = APIRouter(prefix="/api")
+origins = [
+  'http://localhost.com',
+  'http://localhost',
+  'http://localhost:5134'
+]
 
-@app.get('/')
+app.add_middleware(CORSMiddleware, 
+                   allow_origins=origins,
+                   allow_credentials=False, 
+                   allow_methods=["GET"], 
+                   allow_headers=["*"]
+                   )
+
+@api_router.get('/')
 def root() -> str:
   """Root endpoint for testing"""
   return "{'message':'Hello world'}"
 
-@app.get('/sites/names', response_model=list[response_models.SiteName])
+@api_router.get('/sites/names', response_model=list[response_models.SiteName])
 def read_sites(
   session: SessionDependency,
   offset: int = 0,
@@ -26,7 +40,7 @@ def read_sites(
   sites = session.execute(stmt).all()
   return [response_models.SiteName.model_validate(response_models.SiteName(site_id=site.site_id, full_name = site.full_name, abbreviated_name=site.abbreviated_name, site_type=site.site_type)) for site in sites]
 
-@app.get('/sites/{site_id}/names', response_model = Optional[response_models.SiteName])
+@api_router.get('/sites/{site_id}/names', response_model = Optional[response_models.SiteName])
 def read_site(
   session:SessionDependency,
   site_id:str
@@ -39,7 +53,7 @@ def read_site(
   return response_models.SiteName(site_id=site.site_id, full_name = site.full_name, abbreviated_name=site.abbreviated_name,site_type = site.site_type)
 
 
-@app.get('/huntable-species/')
+@api_router.get('/huntable-species/')
 def read_huntable_species(
   session: SessionDependency,
   offset: int = 0,
@@ -56,7 +70,7 @@ def read_huntable_species(
       stipulation=huntable.stipulation
       ) for huntable in huntables]
 
-@app.get('/huntable-species/site/{site_id}')
+@api_router.get('/huntable-species/site/{site_id}')
 def read_huntable_species_by_site(
   session: SessionDependency,
   site_id:str
@@ -76,7 +90,7 @@ def read_huntable_species_by_site(
 
 
 
-@app.get('/huntable-species/species/{species}')
+@api_router.get('/huntable-species/species/{species}')
 def read_huntable_species_by_site(
   session: SessionDependency,
   species:str
@@ -94,7 +108,7 @@ def read_huntable_species_by_site(
       stipulation=huntable.stipulation
       ) for huntable in huntables]
 
-@app.get('/geography/')
+@api_router.get('/geography/')
 def get_all_geography(
   session:SessionDependency
 ) -> list[response_models.Geography]:
@@ -109,7 +123,7 @@ def get_all_geography(
                                     longitude=result.longitude)
           for result in results]
 
-@app.get('/geography/{site_id}')
+@api_router.get('/geography/{site_id}')
 def read_geography(
   session:SessionDependency,
   site_id:str
@@ -126,7 +140,7 @@ def read_geography(
                                     address=result.address,
                                     latitude=result.latitude, 
                                     longitude=result.longitude)
-@app.get('/documents/')
+@api_router.get('/documents/')
 def read_all_documents(
   session:SessionDependency,
 ) -> list[response_models.Document]:
@@ -135,7 +149,7 @@ def read_all_documents(
   results = session.execute(stmt).scalars().all()
   return [response_models.Document(site_id=result.site_id, site_markdown=result.site_markdown, url=result.url) for result in results]
 
-@app.get('/documents/{site_id}')
+@api_router.get('/documents/{site_id}')
 def read_document(
   session:SessionDependency,
   site_id:str
@@ -147,7 +161,7 @@ def read_document(
     raise HTTPException(status_code=404, detail=f"Document with site_id={site_id} not found")
   return response_models.Document(site_id=result.site_id, site_markdown=result.site_markdown, url=result.url)
 
-@app.get('/harvest/')
+@api_router.get('/harvest/')
 def read_harvests(
   session: SessionDependency,
   offset: int = 0,
@@ -186,3 +200,5 @@ def read_harvests_by_specices(
                                   )]
                                   """
 
+
+app.include_router(api_router)
